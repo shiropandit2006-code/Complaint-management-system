@@ -1,1 +1,1 @@
-web: gunicorn app:app
+web: gunicorn civiccare_project.app:app
