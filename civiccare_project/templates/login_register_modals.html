@@ -1,0 +1,205 @@
+<!-- templates/login_register_modals.html -->
+
+<!-- ================= LOGIN MODAL ================= -->
+<div class="modal fade" id="loginModal" tabindex="-1" aria-labelledby="loginModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+
+      <div class="modal-header">
+        <h5 class="modal-title" id="loginModalLabel">🔐 Login</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+
+      <div class="modal-body">
+
+        <!-- Login inline message -->
+        <div id="loginMessage" class="mb-2"></div>
+
+        <!-- Login Form -->
+        <form id="loginForm"
+      method="POST"
+      action="{{ url_for('user_login') }}"
+      autocomplete="off"
+      novalidate>
+
+          <div class="mb-3">
+            <label for="loginContact" class="form-label">Email or Phone <span class="text-danger">*</span></label>
+            <input type="text" class="form-control" id="loginContact" name="contact" value="" placeholder="Enter email or phone" autocomplete="off" required>
+          </div>
+
+          <div class="mb-3">
+            <label for="loginPassword" class="form-label">Password <span class="text-danger">*</span></label>
+            <input type="password" class="form-control" id="loginPassword" name="password" value="" placeholder="Enter password" autocomplete="off" required>
+          </div>
+
+          <button type="submit" class="btn btn-primary w-100">Login</button>
+        </form>
+
+        <div class="text-center mt-2">
+          <span class="small">Don't have an account?</span>
+          <a href="#" class="fw-semibold text-decoration-none" data-bs-toggle="modal" data-bs-target="#registerModal" data-bs-dismiss="modal">Register here</a>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ================= REGISTER MODAL ================= -->
+<div class="modal fade" id="registerModal" tabindex="-1" aria-labelledby="registerModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+
+      <div class="modal-header">
+        <h5 class="modal-title" id="registerModalLabel">🧾 Register</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+
+      <div class="modal-body">
+
+        <!-- Register inline message -->
+        <div id="registerMessage" class="mb-2"></div>
+
+        <!-- Register Form -->
+        <form id="registerForm"
+      method="POST"
+      action="{{ url_for('user_register') }}"
+      autocomplete="off"
+      novalidate>
+
+          <div class="mb-3">
+            <label for="regName" class="form-label">Full Name <span class="text-danger">*</span></label>
+            <input type="text" class="form-control" id="regName" name="name" value="" autocomplete="off" required>
+          </div>
+
+          <div class="mb-3">
+            <label for="regEmail" class="form-label">Email <span class="text-danger">*</span></label>
+            <input type="email" class="form-control" id="regEmail" name="email" value="" autocomplete="off" required>
+          </div>
+
+          <div class="mb-3">
+            <label for="regPhone" class="form-label">Phone <span class="text-danger">*</span></label>
+            <input type="tel" class="form-control" id="regPhone" name="phone" value="" maxlength="10" autocomplete="off" required>
+          </div>
+
+          <div class="mb-3">
+            <label for="regPassword" class="form-label">Password <span class="text-danger">*</span></label>
+            <input type="password" class="form-control" id="regPassword" name="password" value="" autocomplete="off" required>
+          </div>
+
+          <button type="submit" class="btn btn-success w-100">Register</button>
+
+          <div class="text-center mt-2">
+            <span class="small">Already have an account?</span>
+            <a href="#" class="fw-semibold text-decoration-none" data-bs-toggle="modal" data-bs-target="#loginModal" data-bs-dismiss="modal">Login here</a>
+          </div>
+
+          <div class="text-center mt-2 small text-muted">
+            By registering, you agree to our
+            <a href="#" class="text-decoration-none">Terms of Service</a> and
+            <a href="#" class="text-decoration-none">Privacy Policy</a>.
+          </div>
+        </form>
+
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ================= AJAX & CLIENT VALIDATION ================= -->
+<script>
+  // Reset forms & messages when modal opens
+  document.getElementById('loginModal').addEventListener('show.bs.modal', function () {
+      document.getElementById('loginForm').reset();
+      document.getElementById('loginMessage').innerText = '';
+  });
+
+  document.getElementById('registerModal').addEventListener('show.bs.modal', function () {
+      document.getElementById('registerForm').reset();
+      document.getElementById('registerMessage').innerText = '';
+  });
+
+  // ===== LOGIN FORM =====
+  document.getElementById('loginForm').addEventListener('submit', function(e){
+    e.preventDefault();
+    const form = e.target;
+    const data = new FormData(form);
+    const msgDiv = document.getElementById('loginMessage');
+
+    // Client validation
+    if(!data.get('contact') || !data.get('password')){
+      msgDiv.innerText = "Please fill all required fields.";
+      msgDiv.style.color = "red";
+      return;
+    }
+
+    fetch(form.action + window.location.search, {
+  method: 'POST',
+  body: data
+})
+      .then(res => res.json())
+      .then(res => {
+        msgDiv.innerText = res.message;
+        msgDiv.style.color = res.status=='success'?'green':'red';
+
+        if(res.status=='success'){
+          document.querySelectorAll('.btn-login, .btn-register').forEach(el=>el.style.display='none');
+          setTimeout(()=>{ window.location.href = res.redirect; }, 1200); // reload to show navbar logged-in
+        }
+      })
+      .catch(err => console.log(err));
+  });
+
+  // ===== REGISTER FORM =====
+  document.getElementById('registerForm').addEventListener('submit', function(e){
+    e.preventDefault();
+    const form = e.target;
+    const data = new FormData(form);
+    const msgDiv = document.getElementById('registerMessage');
+
+    // Client validation
+    const name = data.get('name').trim();
+    const email = data.get('email').trim();
+    const phone = data.get('phone').trim();
+    const password = data.get('password').trim();
+
+    if(!name || !email || !phone || !password){
+      msgDiv.innerText = "Please fill all required fields.";
+      msgDiv.style.color = "red";
+      return;
+    }
+    if(!/^[A-Za-z]{2,}(?: [A-Za-z]{2,})+$/.test(name)){
+      msgDiv.innerText = "Please enter your full name (First and Last, alphabets only).";
+      msgDiv.style.color = "red";
+      return;
+    }
+    if(!/^[\w\.-]+@[\w\.-]+\.\w+$/.test(email)){
+      msgDiv.innerText = "Please enter a valid email address.";
+      msgDiv.style.color = "red";
+      return;
+    }
+    if(!/^[6-9]\d{9}$/.test(phone)){
+      msgDiv.innerText = "Phone number must be 10 digits and start with 6–9.";
+      msgDiv.style.color = "red";
+      return;
+    }
+
+    fetch(form.action, {method:'POST', body:data})
+      .then(res => res.json())
+      .then(res => {
+        msgDiv.innerText = res.message;
+        msgDiv.style.color = res.status=='success'?'green':'red';
+
+        if(res.status=='success'){
+          setTimeout(()=>{
+            const registerModal = bootstrap.Modal.getInstance(document.getElementById('registerModal'));
+            registerModal.hide();
+
+            const loginModal = new bootstrap.Modal(document.getElementById('loginModal'));
+            loginModal.show();
+          },1500);
+        }
+      })
+      .catch(err => console.log(err));
+  });
+</script>

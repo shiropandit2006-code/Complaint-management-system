@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Contact - CivicCare</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    body { font-family: 'Segoe UI', sans-serif; background-color: #f0f4f8; }
+    .header { background-color: #003366; color: white; padding: 60px 20px; text-align: center; }
+    .section-title { font-size: 28px; font-weight: bold; margin-top: 40px; margin-bottom: 20px; }
+    .contact-card { background: white; padding: 30px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
+    footer { background-color: #001f3f; color: white; text-align: center; padding: 15px 0; margin-top: 50px; }
+    
+    /* Success Message Animation */
+    #successMessage { display: none; transition: all 0.5s ease; }
+  </style>
+</head>
+<body>
+
+  <div class="header">
+    <h1>📣 Contact Us</h1>
+    <p>We'd love to hear your feedback and suggestions!</p>
+  </div>
+
+  <div class="container">
+    <div class="row">
+      <div class="col-md-6">
+        <div class="section-title">🧾 About CivicCare</div>
+        <p>CivicCare is a public grievance reporting system developed to help citizens report civic issues efficiently.</p>
+        
+        <div class="section-title">📍 Contact Information</div>
+        <p><strong>Email:</strong> support@civiccare.in</p>
+        <p><strong>Phone:</strong> +91 11111 11111</p>
+      </div>
+
+      <div class="col-md-6 mb-5">
+        <div class="section-title">✉️ Send us a message</div>
+        <div class="contact-card">
+          <div id="successMessage" class="alert alert-success border-0 shadow-sm mb-4">
+            <i class="fas fa-check-circle me-2"></i> <span id="msgContent"></span>
+          </div>
+
+          <form id="contactForm">
+            <div class="mb-3">
+              <label for="name" class="form-label">Your Name <span class="text-danger">*</span></label>
+              <input type="text" name="name" class="form-control" id="name" required>
+            </div>
+            <div class="mb-3">
+              <label for="email" class="form-label">Your Email <span class="text-danger">*</span></label>
+              <input type="email" name="email" class="form-control" id="email" required>
+            </div>
+            <div class="mb-3">
+              <label for="message" class="form-label">Message <span class="text-danger">*</span></label>
+              <textarea name="message" class="form-control" id="message" rows="4" required></textarea>
+            </div>
+            <button type="submit" class="btn btn-primary w-100 fw-bold" id="submitBtn">📤 Submit Message</button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div> 
+
+  <div class="text-center mt-4">
+    <a href="/" class="btn btn-secondary">🏠 Back to Home</a>
+  </div>
+
+  <footer>
+    <p>© 2026 CivicCare | Developed by Shristi Pandit</p>
+  </footer>
+
+  <script>
+    document.getElementById('contactForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const btn = document.getElementById('submitBtn');
+        const form = this;
+        const successBox = document.getElementById('successMessage');
+        const msgContent = document.getElementById('msgContent');
+
+        // Button Loading State
+        btn.disabled = true;
+        btn.innerHTML = "Sending...";
+
+        const formData = new FormData(form);
+
+        fetch('/contact', {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if(data.status === 'success') {
+                // Success message dikhana
+                msgContent.innerText = data.message;
+                successBox.style.display = 'block';
+                form.reset(); // Form clear karna
+
+                // 5 second baad message gayab karna
+                setTimeout(() => {
+                    successBox.style.opacity = '0';
+                    setTimeout(() => {
+                        successBox.style.display = 'none';
+                        successBox.style.opacity = '1';
+                    }, 500);
+                }, 5000);
+            }
+        })
+        .catch(error => {
+            alert("Something went wrong. Please try again.");
+        })
+        .finally(() => {
+            btn.disabled = false;
+            btn.innerHTML = "📤 Submit Message";
+        });
+    });
+  </script>
+</body>
+</html>

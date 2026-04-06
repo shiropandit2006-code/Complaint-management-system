@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Submit Complaint - CivicCare</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+  <style>
+    body {
+      background-color: #f0f4f8;
+      font-family: 'Segoe UI', sans-serif;
+    }
+    .main-container {
+      max-width: 1000px;
+      margin: 40px auto;
+      background-color: #fff;
+      border-radius: 12px;
+      box-shadow: 0 0 20px rgba(0,0,0,0.08);
+      display: flex;
+      overflow: hidden;
+    }
+    .form-section {
+      flex: 1;
+      padding: 30px;
+    }
+    .info-section {
+      width: 350px;
+      background: #0057a3;
+      color: white;
+      padding: 30px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+    .info-section h4 { margin-bottom: 20px; }
+    .info-section p { font-size: 14px; }
+    .form-label .required { color: red; }
+    .back-home {
+      display: inline-block;
+      margin-bottom: 20px;
+      text-decoration: none;
+      font-weight: bold;
+      color: #0057a3;
+    }
+    .back-home:hover { text-decoration: underline; }
+    @media (max-width: 768px) {
+      .main-container { flex-direction: column; }
+      .info-section { width: 100%; padding: 20px; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <a href="/" class="back-home">← Back to Home</a>
+  <div class="main-container">
+    <!-- LEFT: Complaint Form -->
+    <div class="form-section">
+      <h2 class="mb-4">📝 Submit a Complaint</h2>
+
+      <!-- ✅ Flash Messages (stay on same page) -->
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+          {% for category, message in messages %}
+            <div class="alert alert-{{ 'success' if category=='success' else 'danger' }} alert-dismissible fade show" role="alert">
+              {{ message }}
+              <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+          {% endfor %}
+        {% endif %}
+      {% endwith %}
+
+      {% if session.get('user_id') %}
+      <form id="complaintForm" method="POST" enctype="multipart/form-data">
+
+        <div class="mb-3">
+          <label class="form-label">Full Name <span class="required">*</span></label>
+          <input type="text" class="form-control" name="name"
+                 pattern="[A-Za-z ]+" required title="Name should only contain letters."
+                 value="{{ form_data.name if form_data and form_data.name else '' }}">
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label">Phone Number <span class="required">*</span></label>
+          <input type="tel" class="form-control" name="phone"
+                 pattern="\d{10}" maxlength="10" required title="Enter a valid 10-digit number"
+                 value="{{ form_data.phone if form_data and form_data.phone else '' }}">
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label">Address <span class="required">*</span></label>
+          <textarea class="form-control" name="address" rows="3" required>{{ form_data.address if form_data and form_data.address else '' }}</textarea>
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label">Complaint Category <span class="required">*</span></label>
+          <select class="form-select" name="category" id="category" required onchange="updateSubcategories()">
+            <option value="">-- Select Category --</option>
+            <option value="Cleanliness" {{ 'selected' if form_data.category=='Cleanliness' }}>Cleanliness</option>
+            <option value="Road" {{ 'selected' if form_data.category=='Road' }}>Road Issues</option>
+            <option value="Electricity" {{ 'selected' if form_data.category=='Electricity' }}>Electricity</option>
+            <option value="Water" {{ 'selected' if form_data.category=='Water' }}>Water Leakage</option>
+            <option value="Tree" {{ 'selected' if form_data.category=='Tree' }}>Tree Problems</option>
+            <option value="Animals" {{ 'selected' if form_data.category=='Animals' }}>Stray Animals</option>
+            <option value="Emergency" {{ 'selected' if form_data.category=='Emergency' }}>Emergencies</option>
+            <option value="Traffic" {{ 'selected' if form_data.category=='Traffic' }}>Traffic Signals</option>
+            <option value="Facilities" {{ 'selected' if form_data.category=='Facilities' }}>Public Facilities</option>
+            <option value="Noise" {{ 'selected' if form_data.category=='Noise' }}>Noise / Nuisance</option>
+            <option value="Dumping" {{ 'selected' if form_data.category=='Dumping' }}>Illegal Dumping</option>
+            <option value="Others" {{ 'selected' if form_data.category=='Others' }}>Others</option>
+          </select>
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label">Subcategory <span class="required">*</span></label>
+          <select class="form-select" name="subcategory" id="subcategory" required>
+            <option value="">-- Select Subcategory --</option>
+          </select>
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label">Location <span class="required">*</span></label>
+          <input type="text" class="form-control" name="location"
+                 value="{{ form_data.location if form_data and form_data.location else '' }}" required>
+        </div>
+
+        <!-- ✅ Dynamic Upload Section -->
+        <div class="mb-3">
+          <label class="form-label">Number of Images to Upload (Max 5)</label>
+          <input type="number" id="imageCount" class="form-control" min="1" max="5" value="1" onchange="generateImageInputs()">
+        </div>
+        <div id="imageInputs"></div>
+
+        <!-- Live Camera Capture Section -->
+        <div class="mb-3">
+          <label class="form-label">Capture Image</label>
+          <video id="camera" width="100%" autoplay playsinline style="border:1px solid #ccc; border-radius: 8px;"></video>
+          <canvas id="snapshot" width="640" height="480" style="display:none;"></canvas>
+          <input type="hidden" name="captured_image" id="capturedImage">
+          <div class="mt-2">
+            <button type="button" class="btn btn-success" onclick="takePhoto()">📸 Capture</button>
+            <button type="button" class="btn btn-secondary" onclick="retakePhoto()" style="display:none;" id="retakeBtn">🔄 Retake</button>
+          </div>
+        </div>
+
+        <button type="submit" class="btn btn-primary w-100">📨 Submit Complaint</button>
+      </form>
+
+      {% else %}
+        <div class="alert alert-warning">
+          You must log in before submitting a complaint.
+        </div>
+        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#loginModal">Login Now</button>
+        <script>
+          document.addEventListener('DOMContentLoaded', function() {
+            var loginModal = new bootstrap.Modal(document.getElementById('loginModal'));
+            loginModal.show();
+          });
+        </script>
+      {% endif %}
+    </div>
+
+    <!-- RIGHT: Info Panel -->
+    <div class="info-section">
+      <h4>Need Help?</h4>
+      <p>Fill out the form carefully with your issue. Once submitted, our team will begin processing your complaint immediately.</p>
+      <hr style="border-top: 1px solid rgba(255,255,255,0.4);">
+      <h5>🧾 Example Complaint:</h5>
+      <p><strong>Category:</strong> Road Issues<br>
+         <strong>Subcategory:</strong> Potholes<br>
+         <strong>Location:</strong> Near Sector 12 bus stop<br>
+         <strong>Description:</strong> Large pothole causing traffic delay and accidents.
+      </p>
+    </div>
+  </div>
+</div>
+
+<!-- Subcategory Script -->
+<script>
+  const subcategories = {
+    Cleanliness: ["Garbage not collected", "Overflowing dustbins", "Dirty public toilets", "Dead animal not removed", "Drainage line blocked", "Others"],
+    Road: ["Potholes", "Open manhole", "Damaged footpath", "Broken divider", "Waterlogging after rain", "Others"],
+    Electricity: ["Streetlight not working", "Electric pole fallen", "Exposed wires", "Power cut", "Transformer issue", "Others"],
+    Water: ["Tap leakage", "Pipe burst", "Contaminated water", "Sewer line blocked", "Low water pressure", "Others"],
+    Tree: ["Tree fallen", "Tree blocking road", "Trimming needed", "Illegal tree cutting", "Dead tree removal", "Others"],
+    Animals: ["Stray dogs nuisance", "Injured animal", "Animal attack", "Monkey menace", "Need rescue", "Others"],
+    Emergency: ["Fire incident", "Earthquake damage", "Water tank collapse", "Cracked building", "Short circuit", "Others"],
+    Traffic: ["Signal not working", "Illegal parking", "Traffic jam", "Broken zebra crossing", "Encroachment", "Others"],
+    Facilities: ["Park not maintained", "Broken benches", "Dirty public toilet", "Library maintenance issue", "Community hall unusable", "Others"],
+    Noise: ["Loudspeaker at night", "Construction noise", "Loud music", "Generator noise", "Street shouting", "Others"],
+    Dumping: ["Garbage burning", "Illegal dumping", "Posters on walls", "Building material dumped", "Plastic burning", "Others"]
+  };
+
+  function updateSubcategories() {
+    const category = document.getElementById('category').value;
+    const subcategorySelect = document.getElementById('subcategory');
+    subcategorySelect.innerHTML = '<option value="">-- Select Subcategory --</option>';
+    if (subcategories[category]) {
+      subcategories[category].forEach(item => {
+        const option = document.createElement('option');
+        option.value = item;
+        option.text = item;
+        option.selected = ("{{ form_data.subcategory if form_data else '' }}" === item);
+        subcategorySelect.appendChild(option);
+      });
+    }
+  }
+
+  const preselected = "{{ selected_category }}";
+  document.addEventListener('DOMContentLoaded', () => {
+    if (preselected) {
+      document.getElementById('category').value = preselected;
+    }
+    updateSubcategories();
+  });
+</script>
+
+<!-- Dynamic File Input Script -->
+<script>
+function generateImageInputs() {
+  const count = parseInt(document.getElementById("imageCount").value) || 1;
+  const container = document.getElementById("imageInputs");
+  container.innerHTML = "";
+
+  for (let i = 1; i <= count; i++) {
+    const label = document.createElement("label");
+    label.className = "form-label";
+    label.innerText = `Upload Image ${i}`;
+
+    const input = document.createElement("input");
+    input.type = "file";
+    input.name = "images";
+    input.accept = "image/*";
+    input.className = "form-control mb-2";
+    input.required = true;
+
+    container.appendChild(label);
+    container.appendChild(input);
+  }
+}
+document.addEventListener("DOMContentLoaded", generateImageInputs);
+</script>
+
+<!-- Camera Script -->
+<script>
+  const video = document.getElementById('camera');
+  const canvas = document.getElementById('snapshot');
+  const capturedImage = document.getElementById('capturedImage');
+  const retakeBtn = document.getElementById('retakeBtn');
+
+  if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+    navigator.mediaDevices.getUserMedia({ video: true })
+      .then(stream => { video.srcObject = stream; })
+      .catch(err => { console.warn("⚠️ Camera access denied or not available."); });
+  }
+
+  function takePhoto() {
+    const ctx = canvas.getContext('2d');
+    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+    capturedImage.value = canvas.toDataURL("image/png");
+    video.style.display = "none";
+    canvas.style.display = "block";
+    retakeBtn.style.display = "inline-block";
+  }
+
+  function retakePhoto() {
+    video.style.display = "block";
+    canvas.style.display = "none";
+    retakeBtn.style.display = "none";
+    capturedImage.value = "";
+  }
+
+  // Jab document poori tarah load ho jaye
+document.addEventListener('DOMContentLoaded', function() {
+    // Success alert element ko dhundein (Bootstrap class 'alert-success' ke basis par)
+    const successAlert = document.querySelector('.alert-success');
+
+    if (successAlert) {
+        // 4 seconds (4000ms) ka wait karein
+        setTimeout(function() {
+            // Smooth fade effect ke liye opacity kam karein
+            successAlert.style.transition = "opacity 0.6s ease";
+            successAlert.style.opacity = "0";
+
+            // Opacity transition khatam hone ke baad element ko DOM se remove karein
+            setTimeout(() => {
+                successAlert.remove();
+            }, 600); 
+        }, 4000); 
+    }
+});
+</script>
+
+<!-- Footer -->
+<footer style="background-color: #001f3f; color: white; text-align: center; padding: 15px 0; margin-top: 40px;">
+  <p>© 2026 CivicCare | Developed by Shristi Pandit | For Academic Use Only</p>
+</footer>
+
+</body>
+</html>

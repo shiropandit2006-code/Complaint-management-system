@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Admin Dashboard - CivicCare</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet"> 
+  <style>
+    html, body {
+      height: 100%;
+      margin: 0;
+      font-family: 'Segoe UI', sans-serif;
+      background-color: #f5f9ff;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .content-wrapper {
+      flex: 1;
+    }
+
+    .navbar-dark.bg-dark {
+      background-color: #003366 !important;
+    }
+
+    .nav-link {
+      font-weight: 600;
+      margin-right: 20px;
+    }
+
+    .admin-info {
+      background-color: #ffffff;
+      border-left: 6px solid #0057a3;
+      padding: 30px;
+      margin: 40px auto;
+      border-radius: 12px;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+      max-width: 900px;
+    }
+
+    footer {
+      background-color: #001f3f;
+      color: white;
+      text-align: center;
+      padding: 15px 0;
+    }
+
+    .btn-back-home {
+      display: block;
+      width: fit-content;
+      margin: 0 auto 40px auto;
+    }
+  </style>
+</head>
+<body>
+
+<!-- Navbar -->
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+  <div class="container">
+    <a class="navbar-brand fw-bold" href="/" style="font-size: 1.5rem; color: #ffffff;">
+       <span style="color: #00c0ff;">Civic</span><span style="color: #ffd700;">Care</span>
+    </a>
+
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+
+    <div class="collapse navbar-collapse" id="navbarNav">
+      <ul class="navbar-nav ms-auto">
+        <li class="nav-item"><a class="nav-link" href="/">🏠 Home</a></li>
+        <li class="nav-item"><a class="nav-link" href="/status">📊 Status</a></li>
+        <li class="nav-item"><a class="nav-link" href="#pastComplaints">📂 Past Complaints</a></li>
+        <li class="nav-item"><a class="nav-link" href="/contact">📣 Contact</a></li>
+        <li class="nav-item"><a class="nav-link active" href="/admin">🔧 Admin</a></li>
+        <li class="nav-item"><a class="nav-link" href="/admin/login">🔐 Admin Login</a></li>
+      </ul>
+    </div>
+  </div>
+</nav>
+
+<!-- Content -->
+<div class="content-wrapper">
+  <div class="container">
+    <!-- Admin Info Section -->
+    <div class="admin-info">
+      <h3>👨‍💼 Welcome to the CivicCare Admin Portal</h3>
+      <p>
+        The Admin Dashboard is the control center of CivicCare — a place where civic responsibility meets technology.
+        The administrator plays a crucial role in ensuring that every complaint submitted by citizens is addressed in a timely,
+        respectful, and efficient manner. Through this system, the admin monitors progress, updates statuses,
+        and ensures that every voice is heard.
+      </p>
+      <p>
+        The admin also upholds transparency and accountability across departments by overseeing feedback,
+        analyzing complaint patterns, and encouraging civic participation.
+        The goal is not just to resolve issues, but to build a responsive and responsible civic environment.
+      </p>
+      <p>
+        While this page is open to the public to promote awareness, administrative features like resolving complaints
+        and viewing complaint data require login. If you're a staff member, use the Admin Login link to view the full dashboard.
+      </p>
+    </div>
+
+    <!-- Back to Home Button -->
+    <a href="/" class="btn btn-outline-dark btn-back-home">⬅️ Back to Home</a>
+  </div>
+</div>
+
+<footer>
+  <p>© 2025 CivicCare | Developed by Akansha Singh | For Academic Use Only</p>
+</footer>
+
+</body>
+</html>

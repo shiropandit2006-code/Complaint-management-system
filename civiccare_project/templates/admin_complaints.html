@@ -1,0 +1,469 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CivicCare Admin | Control Panel</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <style>
+        :root { --sidebar-bg: #0f172a; --primary: #2563eb; --bg: #f8fafc; --card-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); }
+        body { font-family: 'Inter', sans-serif; background: var(--bg); color: #1e293b; overflow-x: hidden; }
+        
+        #sidebar { min-width: 260px; max-width: 260px; background: var(--sidebar-bg); min-height: 100vh; color: #fff; position: fixed; transition: all 0.3s; z-index: 1000; }
+        .sidebar-header { padding: 25px; border-bottom: 1px solid #1e293b; text-align: center; }
+        .nav-link { color: #94a3b8; padding: 14px 25px; cursor: pointer; display: flex; align-items: center; text-decoration: none; transition: 0.2s; border-left: 4px solid transparent; }
+        .nav-link:hover, .nav-link.active { color: #fff; background: #1e293b; border-left-color: var(--primary); }
+        .nav-link i { width: 25px; font-size: 1.1rem; }
+
+        .main-wrapper { margin-left: 260px; width: calc(100% - 260px); padding: 30px; }
+        .section { display: none; animation: fadeIn 0.4s ease-out; }
+        .active-section { display: block; }
+        
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        .card-custom { background: #fff; border-radius: 16px; border: none; box-shadow: var(--card-shadow); padding: 20px; height: 100%; }
+        .table-container { background: #fff; border-radius: 12px; overflow: hidden; box-shadow: var(--card-shadow); border: 1px solid #e2e8f0; }
+        .search-bar { border-radius: 50px; padding-left: 40px; border: 1px solid #e2e8f0; }
+
+        .nav-tabs-custom { border-bottom: 2px solid #e2e8f0; margin-bottom: 20px; display: flex; gap: 10px; }
+        .tab-btn { border: none; background: none; padding: 10px 15px; font-weight: 600; color: #64748b; border-bottom: 3px solid transparent; transition: 0.3s; }
+        .tab-btn.active { color: var(--primary); border-bottom-color: var(--primary); }
+
+        .evidence-img { width: 50px; height: 50px; border-radius: 8px; object-fit: cover; cursor: zoom-in; border: 2px solid #f1f5f9; }
+        .feedback-stars { color: #f59e0b; font-size: 0.8rem; }
+        .location-tag { font-size: 0.75rem; color: #64748b; background: #f1f5f9; padding: 2px 8px; border-radius: 4px; display: inline-block; margin-top: 4px; }
+        .pulse-animation { animation: pulse 2s infinite; }
+        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
+    </style>
+</head>
+<body>
+
+    <nav id="sidebar">
+        <div class="sidebar-header">
+            <h4 class="fw-bold mb-0 text-white"><i class="fas fa-shield-alt me-2 text-primary"></i>CivicCare</h4>
+            <small class="text-muted">ADMIN PANEL v2.0</small>
+        </div>
+        <div class="mt-4">
+            <a href="/" class="nav-link text-info fw-bold"><i class="fas fa-home"></i> Home</a>
+            <hr class="mx-3 opacity-25">
+            <a class="nav-link active" onclick="showSection('dashboard', this)"><i class="fas fa-th-large"></i> Dashboard</a>
+            <a class="nav-link" onclick="showSection('tickets', this)"><i class="fas fa-clipboard-list"></i> Manage Tickets</a>
+            <a class="nav-link" onclick="showSection('citizens', this)"><i class="fas fa-user-friends"></i> Citizens</a>
+            <hr class="mx-3 opacity-25 text-white">
+            <a href="/admin/logout" class="nav-link text-danger mt-5"><i class="fas fa-power-off"></i> Logout</a>
+        </div>
+    </nav>
+
+    <div class="main-wrapper">
+        <div id="dashboard" class="section active-section">
+            <h3 class="fw-bold mb-4">Executive Dashboard</h3>
+            <div class="row g-4 mb-5">
+                <div class="col-md-3"><div class="card-custom"><h6>Total</h6><h2 class="text-primary">{{ total }}</h2></div></div>
+                <div class="col-md-3"><div class="card-custom"><h6>Resolved</h6><h2 class="text-success">{{ resolved }}</h2></div></div>
+                <div class="col-md-3"><div class="card-custom"><h6>In Progress</h6><h2 class="text-info">{{ forwarded }}</h2></div></div>
+                <div class="col-md-3"><div class="card-custom"><h6>Pending</h6><h2 class="text-warning">{{ pending }}</h2></div></div>
+            </div>
+            <div class="row g-4">
+                <div class="col-md-8"><div class="card-custom"><canvas id="catChart"></canvas></div></div>
+                <div class="col-md-4"><div class="card-custom"><canvas id="statusChart"></canvas></div></div>
+            </div>
+        </div>
+
+        <div id="tickets" class="section">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h3 class="fw-bold">Manage Tickets</h3>
+                <div class="position-relative">
+                    <i class="fas fa-search position-absolute top-50 start-0 translate-middle-y ms-3 text-muted"></i>
+                    <input type="text" id="ticketSearch" class="form-control search-bar shadow-sm" style="width: 300px;" placeholder="Search Ticket ID or Category..." onkeyup="searchTable()">
+                </div>
+            </div>
+
+            <div class="nav-tabs-custom">
+                <button class="tab-btn active" onclick="filterByTab('all', this)">All Tickets</button>
+                <button class="tab-btn" onclick="filterByTab('Received', this)">New</button>
+                <button class="tab-btn" onclick="filterByTab('In Progress', this)">In Progress</button>
+                <button class="tab-btn" onclick="filterByTab('Resolved', this)">Resolved</button>
+            </div>
+
+            <div class="table-container">
+                <table class="table align-middle mb-0" id="complaintTable">
+                    <thead class="bg-light">
+                        <tr>
+                            <th class="ps-4">Ticket</th>
+                            <th>Issue & Location</th>
+                            <th class="text-center">Evidence</th>
+                            <th>Status</th>
+                            <th>Rating</th>
+                            <th class="text-end pe-4">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for c in complaints %}
+                        <tr class="complaint-row" data-status="{{ c.status }}">
+                            <td class="ps-4">
+                                <span class="fw-bold text-primary">#{{ c.complaint_code }}</span><br>
+                                <small class="text-muted">{{ c.date.strftime('%d %b') }}</small>
+                            </td>
+                            <td>
+                                <div class="fw-bold">{{ c.category }}</div>
+                                <div class="location-tag"><i class="fas fa-map-marker-alt text-danger me-1"></i> {{ c.location }}</div>
+                            </td>
+                            <td class="text-center">
+                                {% if c.images %}
+                                <img src="{{ url_for('static', filename='uploads/' + c.images[0].filename) }}" class="evidence-img">
+                                {% else %}<i class="fas fa-image-slash text-muted"></i>{% endif %}
+                            </td>
+                            <td>
+                                {% if c.status == "Action Taken" %}
+                                    <span class="badge bg-info text-dark pulse-animation"><i class="fas fa-tools me-1"></i> Review Proof</span>
+                                {% elif 'Forwarded' in c.status %}
+                                    <span class="badge bg-light text-primary border border-primary">With Dept</span>
+                                {% elif c.status == "Resolved" %}
+                                    <span class="badge bg-success">Resolved</span>
+                                {% else %}
+                                    <span class="badge bg-warning text-dark">New</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if c.feedback %}
+                                    <div class="d-flex flex-column">
+                                        <div class="text-warning small mb-1">
+                                            {# Loop to show stars based on rating #}
+                                            {% for i in range(c.feedback.rating|int) %}
+                                                <i class="fas fa-star"></i>
+                                            {% endfor %}
+                                        </div>
+                                        <small class="text-dark fw-medium" title="{{ c.feedback.comments }}">
+                                            {{ c.feedback.comments[:20] }}{% if c.feedback.comments|length > 20 %}...{% endif %}
+                                        </small>
+                                    </div>
+                                {% else %}
+                                    <span class="text-muted small italic">No rating yet</span>
+                                {% endif %}
+                         </td>
+                                <td class="text-end pe-4">
+                                {% if c.status == "Received" %}
+                                    <button class="btn btn-primary btn-sm rounded-pill px-3" onclick="openSmartForward('{{ c.complaint_code }}', '{{ c.category }}')">Forward</button>
+                                {% elif c.status == "Action Taken" %}
+                                    <button class="btn btn-dark btn-sm rounded-pill px-3" onclick="viewProof('{{ c.authority_photo }}', '{{ c.authority_note }}', '{{ c.complaint_code }}')">Verify</button>
+                                {% else %}
+                                    <button class="btn btn-outline-secondary btn-sm rounded-pill px-3" 
+        onclick="viewFullSummary(
+            '{{ c.complaint_code }}', 
+            '{{ c.location }}', 
+            '{{ c.feedback.comments if c.feedback else 'None' }}', 
+            '{{ c.feedback.rating if c.feedback else 0 }}',
+            '{{ c.admin_remark if c.admin_remark else 'No remark' }}',
+            '{{ c.authority_photo if c.authority_photo else 'None' }}'
+        )">Details</button>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div id="citizens" class="section">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h3 class="fw-bold mb-0">User Directory</h3>
+        <span class="badge bg-primary rounded-pill">{{ users|length }} Total Users</span>
+    </div>
+
+    <div class="table-container shadow-sm border-0">
+        <table class="table align-middle mb-0 bg-white">
+            <thead class="bg-light">
+                <tr class="text-secondary small text-uppercase">
+                    <th class="ps-4 py-3">Name</th>
+                    <th class="py-3">Email Address</th>
+                    <th class="py-3">Location</th>
+                    <th class="py-3">Role</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for user in users %}
+                <tr class="border-bottom">
+                    <td class="ps-4">
+                        <div class="d-flex align-items-center">
+                            <div class="rounded-circle bg-soft-primary d-flex align-items-center justify-content-center me-3" 
+                                 style="width: 38px; height: 38px; background-color: #eef2ff; color: #4f46e5;">
+                                <i class="fas fa-user"></i>
+                            </div>
+                            <span class="fw-bold text-dark">{{ user.name }}</span>
+                        </div>
+                    </td>
+                    
+                    <td>
+                        <span class="text-muted">{{ user.email }}</span>
+                    </td>
+                    
+                    <td>
+                        <div class="d-flex align-items-center text-muted small">
+                            <i class="fas fa-map-marker-alt text-danger me-2"></i>
+                            {{ user.address or 'Mumbai, Maharashtra' }}
+                        </div>
+                    </td>
+                    
+                    <td>
+                        <span class="text-muted">Citizen</span>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+    </div>
+
+    <div class="modal fade" id="detailsModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content border-0 shadow-lg" style="border-radius: 20px;">
+                <div class="modal-header bg-primary text-white p-4" style="border-radius: 20px 20px 0 0;">
+                    <h5 class="modal-title fw-bold"><i class="fas fa-file-invoice me-2"></i>Case History: <span id="detTicketID"></span></h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <div class="row g-4">
+                        <div class="col-md-5">
+                            <label class="text-uppercase small fw-bold text-muted mb-1 d-block">Incident Location</label>
+                            <div id="detLocation" class="fw-bold p-3 bg-light rounded text-dark mb-4 border-start border-danger border-4"></div>
+                            
+                            <label class="text-uppercase small fw-bold text-muted mb-2 d-block">Work Proof Image</label>
+                            <img id="detProofImg" src="" class="img-fluid rounded-4 shadow-sm border w-100" style="max-height: 250px; object-fit: cover;">
+                        </div>
+                        <div class="col-md-7">
+                            <div class="card border-0 bg-light p-3 mb-3" style="border-radius: 15px;">
+                                <label class="fw-bold text-success small mb-1"><i class="fas fa-comment-check me-1"></i> RESOLUTION MESSAGE</label>
+                                <p id="detAdminRemark" class="mb-0 text-dark small"></p>
+                            </div>
+                            <div id="detFeedbackBox" class="card border-0 p-3" style="border-radius: 15px; background: #fff9db; display:none;">
+                                <label class="fw-bold text-warning small mb-1"><i class="fas fa-star me-1"></i> CITIZEN FEEDBACK</label>
+                                <div id="detStars" class="mb-1 text-warning"></div>
+                                <p id="detFeedbackText" class="mb-0 fst-italic text-muted small"></p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="proofModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content border-0 shadow-lg" style="border-radius: 20px;">
+                <div class="modal-header border-0 text-white p-4" style="background: #1e293b; border-radius: 20px 20px 0 0;">
+                    <h5 class="modal-title fw-bold"><i class="fas fa-check-circle text-success me-2"></i>Verify Resolution</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <div class="row">
+                        <div class="col-md-6 border-end">
+                            <label class="text-uppercase small fw-bold text-muted mb-2">Authority's Submission</label>
+                            <img id="proofImg" src="" class="img-fluid rounded-3 mb-3 w-100 shadow-sm" style="height: 220px; object-fit: cover;">
+                            <div class="p-3 bg-light rounded-3 border-start border-primary border-4">
+                                <small class="fw-bold d-block text-primary">Dept. Note:</small>
+                                <p id="proofNote" class="mb-0 small fst-italic"></p>
+                            </div>
+                        </div>
+                        <div class="col-md-6 ps-4">
+                            <label class="fw-bold mb-2">Write Closing Message for Citizen</label>
+                            <textarea id="adminRemarkInput" class="form-control border-0 bg-light p-3 mb-3" rows="6" style="border-radius: 12px;" placeholder="Describe how the problem was solved..."></textarea>
+                            <small class="text-muted d-block"><i class="fas fa-info-circle me-1"></i> This will mark the ticket as Resolved.</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer bg-light border-0 justify-content-between p-3" style="border-radius: 0 0 20px 20px;">
+                    <button type="button" class="btn btn-outline-danger px-4 rounded-pill fw-bold" onclick="rejectWork()">Reject Work</button>
+                    <button type="button" id="resolveBtn" class="btn btn-success px-5 rounded-pill fw-bold" onclick="triggerResolve()">Approve & Notify</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="forwardModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <form class="modal-content border-0 shadow" id="forwardForm">
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title fw-bold">Dispatch Ticket</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Target Department</label>
+                        <select name="department" class="form-select" id="deptSelect" required onchange="updateDeptEmail()">
+                            <option value="PWD (Roads)" data-email="roads@govt.in">PWD (Roads & Potholes)</option>
+                            <option value="Electricity Board" data-email="power@govt.in">Electricity Board</option>
+                            <option value="Jal Nigam" data-email="water@govt.in">Jal Nigam (Water & Sewage)</option>
+                            <option value="Municipal Corporation" data-email="waste@govt.in">Municipal Corp</option>
+                        </select>
+                    </div>
+                    <div class="row">
+                        <div class="col-6 mb-3">
+                            <label class="form-label fw-bold">Priority</label>
+                            <select name="priority" class="form-select border-warning">
+                                <option value="Normal">Normal</option>
+                                <option value="High">High 🔥</option>
+                            </select>
+                        </div>
+                        <div class="col-6 mb-3">
+                            <label class="form-label fw-bold">Deadline</label>
+                            <input type="date" name="deadline" id="deadline" class="form-control" required>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Official Email</label>
+                        <input type="email" id="dept_email" class="form-control bg-light" readonly>
+                    </div>
+                </div>
+                <div class="modal-footer"><button type="submit" class="btn btn-primary w-100 rounded-pill">Dispatch to Authority</button></div>
+            </form>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        let selectedId = "";
+
+        // --- SECTION NAVIGATION ---
+        function showSection(id, btn) {
+            document.querySelectorAll('.section').forEach(s => s.classList.remove('active-section'));
+            document.getElementById(id).classList.add('active-section');
+            document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
+            btn.classList.add('active');
+        }
+
+        // --- TAB FILTERING LOGIC (ADDED THIS) ---
+        function filterByTab(status, btn) {
+            // Update active button state
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+
+            const rows = document.querySelectorAll('.complaint-row');
+            rows.forEach(row => {
+                const rowStatus = row.getAttribute('data-status');
+                
+                if (status === 'all') {
+                    row.style.display = '';
+                } else if (status === 'In Progress') {
+                    // Match any status that contains "Forwarded" or is "Action Taken"
+                    if (rowStatus.includes('Forwarded') || rowStatus === 'Action Taken') {
+                        row.style.display = '';
+                    } else {
+                        row.style.display = 'none';
+                    }
+                } else if (status === 'Received') {
+                    // Match exact "Received" for New tab
+                    row.style.display = (rowStatus === 'Received') ? '' : 'none';
+                } else if (status === 'Resolved') {
+                    // Match exact "Resolved"
+                    row.style.display = (rowStatus === 'Resolved') ? '' : 'none';
+                }
+            });
+        }
+
+        // --- SEARCH LOGIC ---
+        function searchTable() {
+            let input = document.getElementById("ticketSearch").value.toUpperCase();
+            document.querySelectorAll(".complaint-row").forEach(row => {
+                row.style.display = row.innerText.toUpperCase().includes(input) ? "" : "none";
+            });
+        }
+
+        // --- VERIFICATION & RESOLVE LOGIC ---
+        function viewProof(img, note, code) {
+            selectedId = code;
+            document.getElementById('proofImg').src = "/static/uploads/" + img;
+            document.getElementById('proofNote').innerText = note || "No notes submitted.";
+            document.getElementById('adminRemarkInput').value = "Your complaint has been resolved. Please check the work.";
+            new bootstrap.Modal(document.getElementById('proofModal')).show();
+        }
+
+        function triggerResolve() {
+            const remark = document.getElementById('adminRemarkInput').value;
+            if(remark.length < 10) { alert("Please enter a valid resolution message."); return; }
+            const btn = document.getElementById('resolveBtn');
+            btn.disabled = true; btn.innerText = "Processing...";
+            let fd = new FormData();
+            fd.append('admin_remark', remark);
+            fetch(`/resolve/${selectedId}`, { method: 'POST', body: fd })
+            .then(res => res.json())
+            .then(data => {
+                if(data.status === "success") { location.reload(); }
+                else { alert("Error: " + data.message); btn.disabled = false; btn.innerText = "Approve & Notify"; }
+            });
+        }
+
+        function rejectWork() {
+            if(!confirm("Are you sure you want to REJECT this proof?")) return;
+            fetch(`/reject_proof/${selectedId}`, { method: 'POST' })
+            .then(res => res.json())
+            .then(data => {
+                if(data.status === "success") { location.reload(); }
+                else { alert("Error rejecting proof."); }
+            });
+        }
+
+        function viewFullSummary(id, loc, feedback, rating, remark, proof_img) {
+    document.getElementById('detTicketID').innerText = "#" + id;
+    document.getElementById('detLocation').innerHTML = `<i class="fas fa-map-marker-alt text-danger me-2"></i> ${loc}`;
+    
+    // Remark set karein
+    document.getElementById('detAdminRemark').innerText = (remark && remark !== 'None') ? remark : "Resolution report pending.";
+    
+    // Image Handling
+    const pImg = document.getElementById('detProofImg');
+    if (proof_img && proof_img !== 'None' && proof_img !== '') {
+        pImg.src = "/static/uploads/" + proof_img;
+        pImg.style.display = "block";
+    } else {
+        pImg.src = "https://via.placeholder.com/400x200?text=No+Proof+Photo";
+    }
+
+    // Feedback & Stars
+    const fbBox = document.getElementById('detFeedbackBox');
+    if (feedback && feedback !== 'None' && feedback !== 'No feedback') {
+        fbBox.style.display = 'block';
+        document.getElementById('detFeedbackText').innerText = `"${feedback}"`;
+        
+        let stars = "";
+        let r = parseInt(rating) || 0;
+        for (let i = 0; i < 5; i++) {
+            stars += i < r ? '<i class="fas fa-star text-warning"></i> ' : '<i class="far fa-star text-warning opacity-50"></i> ';
+        }
+        document.getElementById('detStars').innerHTML = stars;
+    } else {
+        fbBox.style.display = 'none';
+    }
+    
+    new bootstrap.Modal(document.getElementById('detailsModal')).show();
+}
+        function openSmartForward(id, category) {
+            selectedId = id;
+            const d = new Date(); d.setDate(d.getDate() + 7);
+            document.getElementById('deadline').value = d.toISOString().split('T')[0];
+            updateDeptEmail();
+            new bootstrap.Modal(document.getElementById('forwardModal')).show();
+        }
+
+        function updateDeptEmail() {
+            const sel = document.getElementById('deptSelect');
+            document.getElementById('dept_email').value = sel.options[sel.selectedIndex].getAttribute('data-email');
+        }
+
+        document.getElementById('forwardForm').onsubmit = function(e) {
+            e.preventDefault();
+            fetch(`/forward_to_authority/${selectedId}`, { method: 'POST', body: new FormData(this) })
+            .then(() => location.reload());
+        };
+
+        window.onload = function() {
+            new Chart(document.getElementById('catChart'), { type: 'bar', data: { labels: {{ cat_labels|tojson }}, datasets: [{ label: 'Tickets', data: {{ cat_counts|tojson }}, backgroundColor: '#2563eb' }] } });
+            new Chart(document.getElementById('statusChart'), { type: 'doughnut', data: { labels: ['Resolved', 'Pending', 'Forwarded'], datasets: [{ data: [{{ resolved }}, {{ pending }}, {{ forwarded }}], backgroundColor: ['#10b981', '#f59e0b', '#0ea5e9'] }] } });
+        };
+    </script>
+</body>
+</html>

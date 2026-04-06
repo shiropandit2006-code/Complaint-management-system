@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Track Complaint - CivicCare</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body { background-color: #f8fafc; font-family: 'Inter', sans-serif; min-height: 100vh; display: flex; flex-direction: column; }
+        .container { flex: 1; padding: 60px 20px; }
+        .status-card { 
+            max-width: 550px; margin: 0 auto; padding: 35px; background: #ffffff; 
+            border-radius: 20px; box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05); border: 1px solid #e2e8f0;
+        }
+        .progress { height: 12px; border-radius: 50px; background-color: #e2e8f0; overflow: visible; margin: 25px 0; }
+        .progress-bar { border-radius: 50px; transition: width 1s ease-in-out; position: relative; }
+        .progress-label { position: absolute; top: -25px; right: 0; font-weight: bold; font-size: 12px; color: #64748b; }
+        
+        /* Resolution Box Styling */
+        .resolution-box { 
+            background: #f0fdf4; border: 1px dashed #22c55e; border-radius: 12px; padding: 15px; margin-top: 20px;
+        }
+        footer { background: #0f172a; color: #94a3b8; padding: 20px 0; text-align: center; margin-top: auto; }
+        .fade-in { animation: fadeIn 0.6s ease-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="status-card fade-in">
+        <div class="text-center mb-4">
+            <h3 class="fw-bold text-dark">📊 Track Grievance</h3>
+            <p class="text-muted small">Enter your unique ID to see live progress</p>
+        </div>
+
+        <form id="statusForm">
+            <div class="mb-3">
+                <div class="input-group">
+                    <span class="input-group-text bg-light border-end-0"><i class="fas fa-search text-muted"></i></span>
+                    <input type="text" class="form-control bg-light border-start-0 py-2" id="complaintId" placeholder="e.g. CMP421294" required>
+                </div>
+            </div>
+            <button type="submit" class="btn btn-primary w-100 fw-bold py-2 shadow-sm">Check Live Status</button>
+        </form>
+
+        <div id="statusResult" class="mt-4 d-none">
+            <div class="d-flex justify-content-between align-items-start mb-3 border-bottom pb-3">
+                <div>
+                    <h6 class="text-muted mb-1 small text-uppercase fw-bold">Ticket ID</h6>
+                    <h5 class="fw-bold mb-0 text-primary" id="displayId"></h5>
+                </div>
+                <div class="text-end">
+                    <span id="currentStatus" class="badge rounded-pill px-3 py-2"></span>
+                </div>
+            </div>
+
+            <p class="small text-muted mb-1"><i class="far fa-calendar-alt me-1"></i> Filed on: <span id="filedDate" class="text-dark fw-bold"></span></p>
+
+            <div class="progress">
+                <div id="progressBar" class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar">
+                    <span class="progress-label" id="progressText">0%</span>
+                </div>
+            </div>
+
+            <div id="resolutionSection" class="resolution-box d-none">
+                <h6 class="fw-bold text-success small mb-1"><i class="fas fa-check-circle me-1"></i> Action Taken Report:</h6>
+                <p id="adminRemark" class="small mb-0 text-dark italic"></p>
+            </div>
+
+            <div id="feedbackSection" class="mt-4 pt-3 border-top d-none">
+                <h6 class="fw-bold mb-3 small">Rate our resolution:</h6>
+                <form id="feedbackForm">
+                    <div class="row g-2">
+                        <div class="col-8">
+                            <select class="form-select form-select-sm" id="rating" required>
+                                <option value="5">⭐⭐⭐⭐⭐ Excellent</option>
+                                <option value="4">⭐⭐⭐⭐ Very Good</option>
+                                <option value="3" selected>⭐⭐⭐ Good</option>
+                                <option value="2">⭐⭐ Fair</option>
+                                <option value="1">⭐ Poor</option>
+                            </select>
+                        </div>
+                        <div class="col-4">
+                            <button type="submit" class="btn btn-success btn-sm w-100 fw-bold">Submit</button>
+                        </div>
+                    </div>
+                    <textarea class="form-control mt-2 form-control-sm" id="comments" rows="2" placeholder="Tell us more (Optional)"></textarea>
+                </form>
+            </div>
+        </div>
+
+        <div class="text-center mt-4">
+            <a href="/" class="btn btn-link btn-sm text-decoration-none text-muted">⬅️ Back to Home</a>
+        </div>
+    </div>
+</div>
+
+<footer>
+    <p class="mb-0 small">© 2026 CivicCare Administration | Government of India</p>
+</footer>
+
+<script>
+
+
+
+
+    document.getElementById('statusForm').addEventListener('submit', function (e) {
+        e.preventDefault();
+        const id = document.getElementById('complaintId').value.trim();
+
+        fetch(`/get_status/${id}`)
+            .then(res => res.json())
+            .then(data => {
+                document.getElementById('statusResult').classList.remove('d-none');
+                document.getElementById('displayId').textContent = id.toUpperCase();
+                document.getElementById('filedDate').textContent = data.date;
+                
+                // Status Badge Color Logic
+                const statusBadge = document.getElementById('currentStatus');
+                statusBadge.textContent = data.status;
+                statusBadge.className = data.resolved ? 'badge rounded-pill bg-success px-3 py-2' : 'badge rounded-pill bg-info text-dark px-3 py-2';
+
+                // Progress Bar Logic
+                const bar = document.getElementById('progressBar');
+                bar.style.width = data.progress + "%";
+                document.getElementById('progressText').textContent = data.progress + "%";
+                bar.className = data.progress >= 100 ? "progress-bar bg-success" : "progress-bar bg-primary progress-bar-striped progress-bar-animated";
+
+                // Show Admin Remark (Action Taken)
+                if (data.resolved) {
+                    document.getElementById('resolutionSection').classList.remove('d-none');
+                    document.getElementById('adminRemark').textContent = data.remarks || "Your issue has been resolved by our department.";
+                    document.getElementById('feedbackSection').classList.remove('d-none');
+                } else {
+                    document.getElementById('resolutionSection').classList.add('d-none');
+                    document.getElementById('feedbackSection').classList.add('d-none');
+                }
+            })
+            .catch(err => alert("❌ Complaint ID not found."));
+    });
+
+    // Flash messages ko 4 seconds baad gayab karne ke liye
+
+
+ document.getElementById('feedbackForm').addEventListener('submit', function (e) {
+    e.preventDefault();
+    const id = document.getElementById('complaintId').value.trim();
+    const rating = document.getElementById('rating').value;
+    const comments = document.getElementById('comments').value;
+
+    fetch(`/submit_feedback/${id}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: `rating=${rating}&comments=${encodeURIComponent(comments)}`
+    }).then(() => {
+        // 1. Success message dikhayein
+        const section = document.getElementById('feedbackSection');
+        section.innerHTML = `
+            <div id="temp-feedback-alert" class="alert alert-success small py-2 shadow-sm fade show" role="alert">
+                ✅ Feedback Received! Thank you.
+            </div>`;
+        
+        // 2. 4 seconds baad gayab karne ka logic
+        setTimeout(function() {
+            const alertBox = document.getElementById('temp-feedback-alert');
+            if (alertBox) {
+                // Smooth fade out effect
+                alertBox.style.transition = "opacity 0.6s ease";
+                alertBox.style.opacity = "0";
+                
+                // Transition khatam hone ke baad element ko poori tarah remove karein
+                setTimeout(() => {
+                    alertBox.remove();
+                    // Optional: Section ko wapas khali kar dein ya koi "Thank you" icon rehne dein
+                    section.innerHTML = "<p class='text-muted small italic text-center'>Feedback submitted. Thank you!</p>";
+                }, 600);
+            }
+        }, 4000); // 4000ms = 4 seconds
+    });
+
+    
+});
+
+
+
+</script>
+
+
+
+</body>
+</html>

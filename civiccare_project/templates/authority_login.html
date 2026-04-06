@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Authority Login | CivicCare</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body { background: #0f172a; display: flex; align-items: center; justify-content: center; height: 100vh; font-family: 'Inter', sans-serif; }
+        .login-card { background: white; padding: 40px; border-radius: 20px; width: 100%; max-width: 400px; box-shadow: 0 10px 25px rgba(0,0,0,0.3); }
+        .btn-primary { background: #2563eb; border: none; padding: 12px; border-radius: 10px; font-weight: 600; }
+    </style>
+</head>
+<body>
+    <div class="login-card">
+        <h3 class="fw-bold text-center mb-2">Authority Login</h3>
+        <p class="text-muted text-center mb-4">Select your department to continue</p>
+        <form action="/authority/login" method="POST">
+            <div class="mb-3">
+                <label class="form-label fw-bold">Department</label>
+                <select name="dept_name" class="form-select" required>
+                    <option value="PWD (Roads)">PWD (Roads)</option>
+                    <option value="Electricity Board">Electricity Board</option>
+                    <option value="Jal Nigam">Jal Nigam</option>
+                    <option value="Municipal Corporation">Municipal Corporation</option>
+                </select>
+            </div>
+            <div class="mb-4">
+                <label class="form-label fw-bold">Access Password</label>
+                <input type="password" name="password" class="form-control" placeholder="••••••••" required>
+            </div>
+            <button type="submit" class="btn btn-primary w-100">Access Dashboard</button>
+        </form>
+    </div>
+</body>
+</html>
