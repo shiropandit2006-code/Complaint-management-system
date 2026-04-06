@@ -129,12 +129,12 @@ class Feedback(db.Model):
     comments = db.Column(db.Text)
     complaint_id = db.Column(db.Integer, db.ForeignKey('complaint.id'), unique=True)
 
-db = SQLAlchemy(app)
+
 
 # --- YE VALA HISSA ADD KAREIN ---
-with app.app_context():
-    db.create_all()
-    # ensure_upload_dir() agar aapne function banaya hai toh yahan call karein
+# with app.app_context():
+#     db.create_all()
+#     # ensure_upload_dir() agar aapne function banaya hai toh yahan call karein
 # -------------------------------
 
 # ------------ Helper functions ------------
