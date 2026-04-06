@@ -13,9 +13,21 @@ from functools import wraps
 from sqlalchemy import func
 
 # ------------ Config ------------
+# app = Flask(__name__)
+# app.config['SECRET_KEY'] = 'your_secret_key_here'  # replace with a secure key in production
+# app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///civiccare.db'
+# app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+# app.config['SQLALCHEMY_ECHO'] = True
+
+from flask import Flask, render_template, request, redirect, url_for, session, jsonify, flash
+# ... baaki saare imports wahi rehne dein ...
+
+# --- YE VALA HISSA UPDATE KAREIN ---
+basedir = os.path.abspath(os.path.dirname(__file__))
+
 app = Flask(__name__)
-app.config['SECRET_KEY'] = 'your_secret_key_here'  # replace with a secure key in production
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///civiccare.db'
+app.config['SECRET_KEY'] = 'your_secret_key_here' 
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + os.path.join(basedir, 'civiccare.db')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['SQLALCHEMY_ECHO'] = True
 
@@ -116,6 +128,14 @@ class Feedback(db.Model):
     rating = db.Column(db.String(10))
     comments = db.Column(db.Text)
     complaint_id = db.Column(db.Integer, db.ForeignKey('complaint.id'), unique=True)
+
+db = SQLAlchemy(app)
+
+# --- YE VALA HISSA ADD KAREIN ---
+with app.app_context():
+    db.create_all()
+    # ensure_upload_dir() agar aapne function banaya hai toh yahan call karein
+# -------------------------------
 
 # ------------ Helper functions ------------
 def make_complaint_code():
