@@ -39,8 +39,8 @@ from flask_mail import Mail, Message
 app.config['MAIL_SERVER'] = 'smtp.gmail.com'
 app.config['MAIL_PORT'] = 587
 app.config['MAIL_USE_TLS'] = True
-app.config['MAIL_USERNAME'] = 'shristip67.official@gmail.com' # Apna Gmail yahan likhein
-app.config['MAIL_PASSWORD'] = 'sfoi qmsc ufjd gyxp'    # Gmail ka 16-digit App Password
+app.config['MAIL_USERNAME'] = os.environ.get('MAIL_USERNAME') # Apna Gmail yahan likhein
+app.config['MAIL_PASSWORD'] =  os.environ.get('MAIL_PASSWORD')    # Gmail ka 16-digit App Password
 app.config['MAIL_DEFAULT_SENDER'] = ('CiviCare Team','shristip67.official@gmail.com')
 
 mail = Mail(app)
